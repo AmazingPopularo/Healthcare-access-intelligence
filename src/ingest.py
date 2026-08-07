@@ -27,9 +27,10 @@ def fetch_census_data():
     return df
 
 def fetch_hpsa_data():
-    """Pull Health Professional Shortage Area (HPSA) designations, nationwide."""
+    """Pull Health Professional Shortage Area (HPSA) designations, filtered to Pennsylvania."""
     url = "https://data.hrsa.gov/DataDownload/DD_Files/HPSA_DASHBOARD.csv"
     df = pd.read_csv(url, low_memory=False)
+    df = df[df["State"] == "Pennsylvania"]
     return df
 
 if __name__ == "__main__":

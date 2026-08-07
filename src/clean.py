@@ -32,6 +32,7 @@ def merge_datasets():
     merged = census.merge(hpsa_summary, on="county_name", how="left")
     # Counties with no HPSA match likely have zero shortage areas
     merged["hpsa_count"] = merged["hpsa_count"].fillna(0)
+    merged["avg_hpsa_score"] = merged["avg_hpsa_score"].fillna(0)
 
     return merged
 
