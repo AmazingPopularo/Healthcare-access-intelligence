@@ -12,7 +12,7 @@ DB_PORT = os.getenv("DB_PORT")
 DB_NAME = os.getenv("DB_NAME")
 
 def get_engine():
-    url = f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+    url = os.getenv("DATABASE_URL")
     return create_engine(url)
 
 def load_to_db():
