@@ -16,10 +16,10 @@ def get_engine():
     return create_engine(url)
 
 def load_to_db():
-    df = pd.read_csv("data/processed/pa_access_merged.csv")
+    df = pd.read_csv("data/processed/national_access_merged.csv")
     engine = get_engine()
-    df.to_sql("county_access", engine, if_exists="replace", index=False)
-    print(f"Loaded {len(df)} rows into 'county_access' table")
+    df.to_sql("county_access_national", engine, if_exists="replace", index=False)
+    print(f"Loaded {len(df)} rows into 'county_access_national' table")
 
 if __name__ == "__main__":
     load_to_db()
