@@ -76,7 +76,6 @@ Accuracy alone is misleading because 60% of counties fall in one class, so AUC i
 Census ACS API --+
 HRSA HPSA File --+--> Python ETL --> PostgreSQL (Neon) --> FastAPI
 USDA RUCC File --+                         |            --> Streamlit app
-                                           |                 + Gemini county summaries
                                            +--> report.py (model, segments, sizing)
 ```
 
@@ -104,7 +103,7 @@ python -m venv venv
 source venv/bin/activate        # Windows: venv\Scripts\activate
 pip install -r requirements.txt
 
-# .env needs DATABASE_URL, CENSUS_API_KEY, GEMINI_API_KEY
+# .env needs DATABASE_URL, CENSUS_API_KEY, GEMINI_API_KEY (optional, API summaries only)
 
 python src/ingest.py
 python src/clean.py
@@ -129,5 +128,5 @@ uvicorn src.api:app --reload    # API docs at http://127.0.0.1:8000/docs
 - [x] PostgreSQL database and REST API
 - [x] Predictive model with baseline and AUC
 - [x] Segmentation, sizing, and recommendations
-- [x] Deployed Streamlit app with AI summaries
+- [x] Deployed Streamlit app
 - [ ] Consulting slide deck (PDF)

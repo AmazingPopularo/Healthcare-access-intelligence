@@ -8,7 +8,6 @@ import pandas as pd
 import streamlit as st
 from sqlalchemy import create_engine, text
 from dotenv import load_dotenv
-from src.summarize import generate_county_summary
 
 load_dotenv()
 
@@ -85,14 +84,6 @@ with tab_explore:
     c6.metric("Segment", row["segment"])
 
     st.info(f"**Recommended intervention:** {RECOMMENDATIONS[row['segment']]}")
-
-    st.subheader("AI-Generated Summary")
-    if st.button("Generate summary for this county"):
-        with st.spinner("Generating summary..."):
-            try:
-                st.write(generate_county_summary(row.to_dict()))
-            except Exception as e:
-                st.error(f"Summary unavailable right now ({type(e).__name__}).")
 
     st.subheader(f"Counties ranked by shortage severity: {seg_choice}")
     st.dataframe(
