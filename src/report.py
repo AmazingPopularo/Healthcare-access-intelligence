@@ -1,5 +1,10 @@
+"""
+Consulting analysis: model metrics, descriptive findings, segmentation, sizing.
+Reads county_access_national, writes segment labels to county_segments
+(used by the app and API) and to data/processed/segments.csv.
+"""
 import os
-import requests
+import warnings
 import numpy as np
 import pandas as pd
 from sqlalchemy import create_engine, text
@@ -10,24 +15,14 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.cluster import KMeans
 from sklearn.metrics import accuracy_score, roc_auc_score, precision_score, recall_score
 
+warnings.filterwarnings("ignore", category=RuntimeWarning)  # spurious macOS numpy matmul warnings
+
 load_dotenv()
 engine = create_engine(os.getenv("DATABASE_URL"))
 with engine.connect() as conn:
-    df = pd.read_sql(text("SELECT * FROM county_access_national"), conn)
+    df = pd.read_sql(text("SELECT * FROM county_access_national ORDER BY fips"), conn)
 
-# Fix: real total uninsured % (S2701), replacing the under-19-only variable
-r = requests.get(
-    "https://api.census.gov/data/2023/acs/acs5/subject",
-    params={"get": "S2701_C05_001E", "for": "county:*", "in": "state:*",
-            "key": os.getenv("CENSUS_API_KEY")},
-)
-r.raise_for_status()
-rows = r.json()
-u = pd.DataFrame(rows[1:], columns=rows[0])
-u["fips"] = (u["state"] + u["county"]).astype(int)
-u["uninsured_pct"] = pd.to_numeric(u["S2701_C05_001E"], errors="coerce")
-df = df.merge(u[["fips", "uninsured_pct"]], on="fips", how="left")
-df = df[(df["median_income"] > 0) & (df["uninsured_pct"] >= 0)].dropna(subset=["rucc_code"])
+df = df[(df["median_income"] > 0) & (df["uninsured_pct"] >= 0)].dropna(subset=["rucc_code"]).copy()
 
 # ---------- PHASE 2: model metrics ----------
 cut = df.loc[df["avg_hpsa_score"] > 0, "avg_hpsa_score"].median()
@@ -91,7 +86,8 @@ print(pd.crosstab(df["segment"], km.labels_).to_string())
 
 # ---------- PHASE 5: sizing ----------
 h = pd.read_csv("data/raw/hpsa_national.csv", low_memory=False)
-h = h[(h["Discipline"] == "Primary Care") & (h["HPSA Status"] == "Designated") & (h["HPSA Type (Category)"] != "Facility")]
+h = h[(h["Discipline"] == "Primary Care") & (h["HPSA Status"] == "Designated")
+      & (h["HPSA Type (Category)"] != "Facility")]
 h = h.drop_duplicates("HPSA ID")
 desig_pop = pd.to_numeric(h["HPSA Designation Population"], errors="coerce").sum()
 priority_pop = df.loc[df["segment"] != "Lower Priority", "population"].sum()
@@ -101,5 +97,7 @@ print(f"Residents in HPSA-designated areas: {desig_pop / 1e6:.1f}M")
 print(f"Providers needed at 3,500:1 (upper bound, existing providers not subtracted): {desig_pop / 3500:,.0f}")
 print(f"Residents in the 3 priority segments: {priority_pop / 1e6:.1f}M")
 
+# ---------- Save segments for app + API ----------
+df[["fips", "segment", "high_risk"]].to_sql("county_segments", engine, if_exists="replace", index=False)
 df.to_csv("data/processed/segments.csv", index=False)
-print("\nSaved data/processed/segments.csv")
+print("\nSaved segments to 'county_segments' table and data/processed/segments.csv")

@@ -5,21 +5,15 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-DB_USER = os.getenv("DB_USER")
-DB_PASSWORD = os.getenv("DB_PASSWORD")
-DB_HOST = os.getenv("DB_HOST")
-DB_PORT = os.getenv("DB_PORT")
-DB_NAME = os.getenv("DB_NAME")
+TABLE = "county_access_national"
 
-def get_engine():
-    url = os.getenv("DATABASE_URL")
-    return create_engine(url)
 
 def load_to_db():
     df = pd.read_csv("data/processed/national_access_merged.csv")
-    engine = get_engine()
-    df.to_sql("county_access_national", engine, if_exists="replace", index=False)
-    print(f"Loaded {len(df)} rows into 'county_access_national' table")
+    engine = create_engine(os.getenv("DATABASE_URL"))
+    df.to_sql(TABLE, engine, if_exists="replace", index=False)
+    print(f"Loaded {len(df)} rows into '{TABLE}' table")
+
 
 if __name__ == "__main__":
     load_to_db()
